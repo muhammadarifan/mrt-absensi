@@ -20,6 +20,8 @@ function logout() {
     |
     <router-link to="/students">Siswa</router-link>
     |
+    <router-link to="/classes">Kelas</router-link>
+    |
     <Button class="bg-[var(--brand)] text-white hover:opacity-90" @click="logout">Logout</Button>
   </nav>
   <router-view />

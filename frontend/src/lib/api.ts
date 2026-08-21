@@ -17,6 +17,8 @@ export type Student = {
 
 export type StudentInput = { name: string; classId: number; cardUid?: string | null };
 
+export type ClassInput = { name: string };
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const token = getToken();
   const res = await fetch(`${BASE_URL}${path}`, {
@@ -49,5 +51,9 @@ export const api = {
     request<Student>(`/students/${id}`, { method: "PATCH", body: JSON.stringify(input) }),
   deleteStudent: (id: number) => request<void>(`/students/${id}`, { method: "DELETE" }),
   getClasses: () => request<ClassItem[]>("/classes"),
+  createClass: (input: ClassInput) => request<ClassItem>("/classes", { method: "POST", body: JSON.stringify(input) }),
+  updateClass: (id: number, input: ClassInput) =>
+    request<ClassItem>(`/classes/${id}`, { method: "PATCH", body: JSON.stringify(input) }),
+  deleteClass: (id: number) => request<void>(`/classes/${id}`, { method: "DELETE" }),
   getAttendance: (date?: string) => request<any[]>(`/attendance${date ? `?date=${date}` : ""}`),
 };

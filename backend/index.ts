@@ -21,6 +21,7 @@ app.use("/api/students/*", jwt({ secret: JWT_SECRET, alg: "HS256" }));
 app.use("/api/attendance", jwt({ secret: JWT_SECRET, alg: "HS256" }));
 app.use("/api/attendance/*", jwt({ secret: JWT_SECRET, alg: "HS256" }));
 app.use("/api/classes", jwt({ secret: JWT_SECRET, alg: "HS256" }));
+app.use("/api/classes/*", jwt({ secret: JWT_SECRET, alg: "HS256" }));
 app.route("/api", studentsRoute);
 app.route("/api", attendanceRoute);
 app.route("/api", classesRoute);
