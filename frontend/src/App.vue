@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useRouter, useRoute } from "vue-router";
+import { Button } from "@/components/ui/button";
 
 const router = useRouter();
 const route = useRoute();
@@ -19,7 +20,7 @@ function logout() {
     |
     <router-link to="/students">Siswa</router-link>
     |
-    <button @click="logout">Logout</button>
+    <Button class="bg-[var(--brand)] text-white hover:opacity-90" @click="logout">Logout</Button>
   </nav>
   <router-view />
 </template>

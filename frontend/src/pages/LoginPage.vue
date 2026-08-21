@@ -2,6 +2,10 @@
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { api } from "../lib/api";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 const email = ref("");
 const password = ref("");
@@ -26,39 +30,25 @@ async function onSubmit() {
 </script>
 
 <template>
-  <form class="login" @submit.prevent="onSubmit">
-    <h1>Login</h1>
-    <label>
-      Email
-      <input v-model="email" type="email" required autofocus />
-    </label>
-    <label>
-      Password
-      <input v-model="password" type="password" required />
-    </label>
-    <p v-if="error" class="error">{{ error }}</p>
-    <button type="submit" :disabled="loading">{{ loading ? "Loading..." : "Login" }}</button>
-  </form>
+  <Card class="max-w-80 mx-auto mt-16">
+    <CardHeader>
+      <CardTitle class="text-xl">Login</CardTitle>
+    </CardHeader>
+    <CardContent>
+      <form class="flex flex-col gap-3.5" @submit.prevent="onSubmit">
+        <div class="flex flex-col gap-1">
+          <Label for="email">Email</Label>
+          <Input id="email" v-model="email" type="email" required autofocus />
+        </div>
+        <div class="flex flex-col gap-1">
+          <Label for="password">Password</Label>
+          <Input id="password" v-model="password" type="password" required />
+        </div>
+        <p v-if="error" class="text-[var(--danger)] text-[13px] -mt-1.5 mb-0">{{ error }}</p>
+        <Button type="submit" :disabled="loading" class="bg-[var(--brand)] text-white hover:opacity-90">
+          {{ loading ? "Loading..." : "Login" }}
+        </Button>
+      </form>
+    </CardContent>
+  </Card>
 </template>
-
-<style scoped>
-.login {
-  max-width: 320px;
-  margin: 4rem auto;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  padding: 32px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-}
-.login h1 {
-  margin: 0;
-}
-.error {
-  color: var(--danger);
-  font-size: 13px;
-  margin: -6px 0 0;
-}
-</style>

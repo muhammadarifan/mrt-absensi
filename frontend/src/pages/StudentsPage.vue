@@ -1,6 +1,15 @@
 <script setup lang="ts">
 import { useQuery } from "@tanstack/vue-query";
 import { api } from "../lib/api";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableEmpty,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 const { data: students, isLoading } = useQuery({
   queryKey: ["students"],
@@ -11,23 +20,23 @@ const { data: students, isLoading } = useQuery({
 <template>
   <main class="page">
     <h1>Data Siswa</h1>
-    <p v-if="isLoading">Loading...</p>
-    <p v-else-if="!students?.length">Belum ada data siswa.</p>
-    <table v-else>
-      <thead>
-        <tr>
-          <th>Nama</th>
-          <th>Kelas</th>
-          <th>UID Kartu</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="s in students" :key="s.id">
-          <td>{{ s.name }}</td>
-          <td>{{ s.classId }}</td>
-          <td>{{ s.cardUid ?? "-" }}</td>
-        </tr>
-      </tbody>
-    </table>
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Nama</TableHead>
+          <TableHead>Kelas</TableHead>
+          <TableHead>UID Kartu</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        <TableEmpty v-if="isLoading" :colspan="3">Loading...</TableEmpty>
+        <TableEmpty v-else-if="!students?.length" :colspan="3">Belum ada data siswa.</TableEmpty>
+        <TableRow v-for="s in students" v-else :key="s.id">
+          <TableCell>{{ s.name }}</TableCell>
+          <TableCell>{{ s.classId }}</TableCell>
+          <TableCell>{{ s.cardUid ?? "-" }}</TableCell>
+        </TableRow>
+      </TableBody>
+    </Table>
   </main>
 </template>
