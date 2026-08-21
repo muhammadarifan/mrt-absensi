@@ -28,3 +28,9 @@ studentsRoute.post("/students/:id/card", async (c) => {
   const [updated] = await db.update(students).set({ cardUid: card_uid }).where(eq(students.id, id)).returning();
   return c.json(updated);
 });
+
+studentsRoute.delete("/students/:id", async (c) => {
+  const id = Number(c.req.param("id"));
+  await db.delete(students).where(eq(students.id, id));
+  return c.body(null, 204);
+});

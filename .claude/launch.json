@@ -6,6 +6,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev", "--prefix", "frontend"],
       "port": 5173
+    },
+    {
+      "name": "backend-dev",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-lc", "cd backend && bun run --hot index.ts"],
+      "port": 3000
     }
   ]
 }

@@ -4,6 +4,19 @@ export function getToken() {
   return localStorage.getItem("token");
 }
 
+export type ClassItem = { id: number; name: string; createdAt: string };
+
+export type Student = {
+  id: number;
+  classId: number;
+  name: string;
+  cardUid: string | null;
+  photoUrl: string | null;
+  createdAt: string;
+};
+
+export type StudentInput = { name: string; classId: number; cardUid?: string | null };
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const token = getToken();
   const res = await fetch(`${BASE_URL}${path}`, {
@@ -19,6 +32,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     if (location.pathname !== "/login") location.href = "/login";
   }
   if (!res.ok) throw new Error(`API error ${res.status}`);
+  if (res.status === 204) return undefined as T;
   return res.json();
 }
 
@@ -28,6 +42,12 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ email, password }),
     }),
-  getStudents: () => request<any[]>("/students"),
+  getStudents: () => request<Student[]>("/students"),
+  createStudent: (input: StudentInput) =>
+    request<Student>("/students", { method: "POST", body: JSON.stringify(input) }),
+  updateStudent: (id: number, input: StudentInput) =>
+    request<Student>(`/students/${id}`, { method: "PATCH", body: JSON.stringify(input) }),
+  deleteStudent: (id: number) => request<void>(`/students/${id}`, { method: "DELETE" }),
+  getClasses: () => request<ClassItem[]>("/classes"),
   getAttendance: (date?: string) => request<any[]>(`/attendance${date ? `?date=${date}` : ""}`),
 };

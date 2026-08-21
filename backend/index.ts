@@ -5,6 +5,7 @@ import { authRoute } from "./src/routes/auth";
 import { scanRoute } from "./src/routes/scan";
 import { studentsRoute } from "./src/routes/students";
 import { attendanceRoute } from "./src/routes/attendance";
+import { classesRoute } from "./src/routes/classes";
 
 const JWT_SECRET = process.env.JWT_SECRET ?? "dev-secret-change-me";
 
@@ -19,7 +20,9 @@ app.use("/api/students", jwt({ secret: JWT_SECRET, alg: "HS256" }));
 app.use("/api/students/*", jwt({ secret: JWT_SECRET, alg: "HS256" }));
 app.use("/api/attendance", jwt({ secret: JWT_SECRET, alg: "HS256" }));
 app.use("/api/attendance/*", jwt({ secret: JWT_SECRET, alg: "HS256" }));
+app.use("/api/classes", jwt({ secret: JWT_SECRET, alg: "HS256" }));
 app.route("/api", studentsRoute);
 app.route("/api", attendanceRoute);
+app.route("/api", classesRoute);
 
 export default app;
