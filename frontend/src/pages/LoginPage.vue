@@ -47,9 +47,18 @@ async function onSubmit() {
   margin: 4rem auto;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 14px;
+  padding: 32px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.login h1 {
+  margin: 0;
 }
 .error {
-  color: #d33;
+  color: var(--danger);
+  font-size: 13px;
+  margin: -6px 0 0;
 }
 </style>
