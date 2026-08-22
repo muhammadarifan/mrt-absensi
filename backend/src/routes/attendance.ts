@@ -21,3 +21,9 @@ attendanceRoute.get("/attendance/:student_id/history", async (c) => {
   const rows = await db.query.attendance.findMany({ where: eq(attendance.studentId, studentId) });
   return c.json(rows);
 });
+
+attendanceRoute.delete("/attendance/:id", async (c) => {
+  const id = Number(c.req.param("id"));
+  await db.delete(attendance).where(eq(attendance.id, id));
+  return c.body(null, 204);
+});

@@ -60,6 +60,7 @@ export const api = {
     request<ClassItem>(`/classes/${id}`, { method: "PATCH", body: JSON.stringify(input) }),
   deleteClass: (id: number) => request<void>(`/classes/${id}`, { method: "DELETE" }),
   getAttendance: (date?: string) => request<any[]>(`/attendance${date ? `?date=${date}` : ""}`),
+  deleteAttendance: (id: number) => request<void>(`/attendance/${id}`, { method: "DELETE" }),
   getDevices: () => request<DeviceItem[]>("/devices"),
   createDevice: (input: DeviceInput) =>
     request<DeviceItem>("/devices", { method: "POST", body: JSON.stringify(input) }),
