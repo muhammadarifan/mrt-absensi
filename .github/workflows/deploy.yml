@@ -41,6 +41,10 @@ jobs:
           ssh -i ~/.ssh/deploy_key "root@${{ secrets.SERVER_HOST }}" '
             export PATH=$HOME/.bun/bin:$PATH
             cd /opt/mrt-absensi/backend
+            WEB_ORIGIN="${{ secrets.WEB_ORIGIN }}"
+            if [ -n "$WEB_ORIGIN" ]; then
+              echo "WEB_ORIGIN=$WEB_ORIGIN" > .env
+            fi
             bun install
             DB_FILE=/opt/mrt-absensi/backend/attendance.db bun run db:push --force
             pm2 restart mrt-backend
