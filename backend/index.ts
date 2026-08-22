@@ -6,6 +6,7 @@ import { scanRoute } from "./src/routes/scan";
 import { studentsRoute } from "./src/routes/students";
 import { attendanceRoute } from "./src/routes/attendance";
 import { classesRoute } from "./src/routes/classes";
+import { devicesRoute } from "./src/routes/devices";
 
 const JWT_SECRET = process.env.JWT_SECRET ?? "dev-secret-change-me";
 
@@ -22,8 +23,13 @@ app.use("/api/attendance", jwt({ secret: JWT_SECRET, alg: "HS256" }));
 app.use("/api/attendance/*", jwt({ secret: JWT_SECRET, alg: "HS256" }));
 app.use("/api/classes", jwt({ secret: JWT_SECRET, alg: "HS256" }));
 app.use("/api/classes/*", jwt({ secret: JWT_SECRET, alg: "HS256" }));
+// Perhatikan: /api/devices/:id (bukan /api/devices/*) supaya tidak menimpa
+// /api/devices/:device_id/scan milik scanRoute, yang autentikasinya via X-Device-Key.
+app.use("/api/devices", jwt({ secret: JWT_SECRET, alg: "HS256" }));
+app.use("/api/devices/:id", jwt({ secret: JWT_SECRET, alg: "HS256" }));
 app.route("/api", studentsRoute);
 app.route("/api", attendanceRoute);
 app.route("/api", classesRoute);
+app.route("/api", devicesRoute);
 
 export default app;

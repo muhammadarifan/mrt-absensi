@@ -19,6 +19,10 @@ export type StudentInput = { name: string; classId: number; cardUid?: string | n
 
 export type ClassInput = { name: string };
 
+export type DeviceItem = { id: number; name: string; apiKey: string; createdAt: string };
+
+export type DeviceInput = { name: string };
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const token = getToken();
   const res = await fetch(`${BASE_URL}${path}`, {
@@ -56,4 +60,10 @@ export const api = {
     request<ClassItem>(`/classes/${id}`, { method: "PATCH", body: JSON.stringify(input) }),
   deleteClass: (id: number) => request<void>(`/classes/${id}`, { method: "DELETE" }),
   getAttendance: (date?: string) => request<any[]>(`/attendance${date ? `?date=${date}` : ""}`),
+  getDevices: () => request<DeviceItem[]>("/devices"),
+  createDevice: (input: DeviceInput) =>
+    request<DeviceItem>("/devices", { method: "POST", body: JSON.stringify(input) }),
+  updateDevice: (id: number, input: DeviceInput) =>
+    request<DeviceItem>(`/devices/${id}`, { method: "PATCH", body: JSON.stringify(input) }),
+  deleteDevice: (id: number) => request<void>(`/devices/${id}`, { method: "DELETE" }),
 };

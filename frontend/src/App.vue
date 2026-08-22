@@ -22,6 +22,8 @@ function logout() {
     |
     <router-link to="/classes">Kelas</router-link>
     |
+    <router-link to="/devices">Perangkat</router-link>
+    |
     <Button class="bg-[var(--brand)] text-white hover:opacity-90" @click="logout">Logout</Button>
   </nav>
   <router-view />
