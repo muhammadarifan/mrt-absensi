@@ -87,7 +87,6 @@ export const api = {
   clearPendingScan: (deviceId: number) => request<void>(`/devices/${deviceId}/pending-scan`, { method: "DELETE" }),
   getRules: () => request<Rules>("/rules"),
   updateRules: (input: RulesInput) => request<Rules>("/rules", { method: "PATCH", body: JSON.stringify(input) }),
-};
 
   getAttendanceCode: () => request<AttendanceCode | null>("/attendance-code"),
   generateAttendanceCode: () => request<AttendanceCode>("/attendance-code/generate", { method: "POST" }),
