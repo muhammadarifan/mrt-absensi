@@ -35,7 +35,7 @@ INSERT INTO attendance_rules (id, checkin_start, late_after) VALUES (1, '06:00',
 CREATE TABLE attendance (
   id            INTEGER PRIMARY KEY AUTOINCREMENT,
   student_id    INTEGER NOT NULL REFERENCES students(id),
-  device_id     INTEGER NOT NULL REFERENCES devices(id),
+  device_id     INTEGER REFERENCES devices(id),         -- null = absen via portal (kode manual)
   scanned_at    TEXT NOT NULL DEFAULT (datetime('now')),
   status        TEXT NOT NULL CHECK (status IN ('hadir', 'telat')),
   created_at    TEXT NOT NULL DEFAULT (datetime('now'))
@@ -43,6 +43,14 @@ CREATE TABLE attendance (
 -- 1 siswa cuma boleh 1 catatan absen per hari (tap kedua diabaikan/di-update di app layer)
 CREATE UNIQUE INDEX idx_attendance_student_day ON attendance(student_id, date(scanned_at));
 CREATE INDEX idx_attendance_date ON attendance(date(scanned_at));
+
+-- Kode absensi mingguan: baris terbaru = kode aktif, ditulis guru di papan tulis.
+-- Siswa mengetik kode ini di portal untuk absen tanpa kartu RFID.
+CREATE TABLE attendance_codes (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  code        TEXT NOT NULL,
+  created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+);
 
 -- Login dashboard (admin/guru)
 CREATE TABLE users (

@@ -40,6 +40,16 @@ import {
 
 const queryClient = useQueryClient();
 
+const { data: attendanceCode } = useQuery({
+  queryKey: ["attendance-code"],
+  queryFn: api.getAttendanceCode,
+});
+
+const generateCodeMutation = useMutation({
+  mutationFn: api.generateAttendanceCode,
+  onSuccess: () => queryClient.invalidateQueries({ queryKey: ["attendance-code"] }),
+});
+
 const { data: students, isLoading } = useQuery({
   queryKey: ["students"],
   queryFn: api.getStudents,
@@ -158,6 +168,20 @@ const table = useTable({
     <div class="flex items-center justify-between mb-5">
       <h1 class="!mb-0">Data Siswa</h1>
       <Button class="bg-[var(--brand)] text-white hover:opacity-90" @click="openCreate">Tambah Siswa</Button>
+    </div>
+
+    <div class="flex items-center gap-3.5 mb-5 p-3.5 border rounded-md">
+      <div class="flex-1">
+        <p class="text-[13px] text-muted-foreground mb-0.5">Kode absensi minggu ini (tulis di papan)</p>
+        <p class="!mb-0 text-2xl font-bold tracking-widest">{{ attendanceCode?.code ?? "-" }}</p>
+      </div>
+      <Button
+        variant="outline"
+        :disabled="generateCodeMutation.isPending.value"
+        @click="generateCodeMutation.mutate()"
+      >
+        {{ generateCodeMutation.isPending.value ? "Membuat..." : "Generate Kode Baru" }}
+      </Button>
     </div>
 
     <Table>
