@@ -52,6 +52,13 @@ export const attendance = sqliteTable(
   ]
 );
 
+// Kode absensi mingguan: baris terbaru = kode aktif, ditulis guru di papan.
+export const attendanceCodes = sqliteTable("attendance_codes", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  code: text("code").notNull(),
+  createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+});
+
 export const users = sqliteTable("users", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),

@@ -5,7 +5,7 @@ import { useRoute, useRouter } from "vue-router";
 
 const router = useRouter();
 const route = useRoute();
-const loggedIn = computed(() => route.path !== "/login");
+const loggedIn = computed(() => route.path !== "/login" && route.path !== "/portal");
 
 function logout() {
   localStorage.removeItem("token");

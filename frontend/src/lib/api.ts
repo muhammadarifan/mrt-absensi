@@ -35,6 +35,9 @@ export type Rules = {
 };
 
 export type RulesInput = Partial<Omit<Rules, "id">>;
+export type AttendanceCode = { id: number; code: string; createdAt: string };
+
+export type CheckinResult = { status: string; student_name?: string; attendance_status?: string };
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const token = getToken();
@@ -45,7 +48,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     },
     ...init,
   });
-  if (res.status === 401 && path !== "/auth/login") {
+  if (res.status === 401 && path !== "/auth/login" && path !== "/checkin") {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     if (location.pathname !== "/login") location.href = "/login";
@@ -84,4 +87,19 @@ export const api = {
   clearPendingScan: (deviceId: number) => request<void>(`/devices/${deviceId}/pending-scan`, { method: "DELETE" }),
   getRules: () => request<Rules>("/rules"),
   updateRules: (input: RulesInput) => request<Rules>("/rules", { method: "PATCH", body: JSON.stringify(input) }),
+};
+
+  getAttendanceCode: () => request<AttendanceCode | null>("/attendance-code"),
+  generateAttendanceCode: () => request<AttendanceCode>("/attendance-code/generate", { method: "POST" }),
+
+  getPortalClasses: () => request<ClassItem[]>("/checkin/classes"),
+  getPortalStudents: (classId: number) => request<{ id: number; name: string }[]>(`/checkin/students?class_id=${classId}`),
+  checkin: async (studentId: number, code: string) => {
+    const res = await fetch(`${BASE_URL}/checkin`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ student_id: studentId, code }),
+    });
+    return (await res.json()) as CheckinResult;
+  },
 };
