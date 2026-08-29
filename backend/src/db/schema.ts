@@ -1,5 +1,5 @@
-import { sqliteTable, integer, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
+import { integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 export const classes = sqliteTable("classes", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -27,6 +27,9 @@ export const attendanceRules = sqliteTable("attendance_rules", {
   id: integer("id").primaryKey(),
   checkinStart: text("checkin_start").notNull().default("06:00"),
   lateAfter: text("late_after").notNull().default("07:00"),
+  checkoutStart: text("checkout_start").notNull().default("15:00"),
+  checkoutEnd: text("checkout_end").notNull().default("17:00"),
+  manualMode: text("manual_mode", { enum: ["auto", "hadir", "pulang"] }).notNull().default("auto"),
 });
 
 export const attendance = sqliteTable(
@@ -34,15 +37,17 @@ export const attendance = sqliteTable(
   {
     id: integer("id").primaryKey({ autoIncrement: true }),
     studentId: integer("student_id").notNull().references(() => students.id),
-    deviceId: integer("device_id").references(() => devices.id), // null = absen via portal (kode manual)
+    deviceId: integer("device_id").notNull().references(() => devices.id),
+    type: text("type", { enum: ["hadir", "pulang"] }).notNull().default("hadir"),
     scannedAt: text("scanned_at").notNull().default(sql`(datetime('now'))`),
-    status: text("status", { enum: ["hadir", "telat"] }).notNull(),
+    status: text("status", { enum: ["hadir", "telat", "pulang"] }).notNull(),
     createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
   },
   (table) => [
-    uniqueIndex("idx_attendance_student_day").on(
+    uniqueIndex("idx_attendance_student_day_type").on(
       table.studentId,
-      sql`date(${table.scannedAt})`
+      sql`date(${table.scannedAt})`,
+      table.type
     ),
   ]
 );

@@ -23,6 +23,18 @@ export type DeviceItem = { id: number; name: string; apiKey: string; createdAt: 
 
 export type DeviceInput = { name: string };
 
+export type PendingScan = { cardUid: string | null; scannedAt?: string };
+
+export type Rules = {
+  id: number;
+  checkinStart: string;
+  lateAfter: string;
+  checkoutStart: string;
+  checkoutEnd: string;
+  manualMode: "auto" | "hadir" | "pulang";
+};
+
+export type RulesInput = Partial<Omit<Rules, "id">>;
 export type AttendanceCode = { id: number; code: string; createdAt: string };
 
 export type CheckinResult = { status: string; student_name?: string; attendance_status?: string };
@@ -71,6 +83,11 @@ export const api = {
   updateDevice: (id: number, input: DeviceInput) =>
     request<DeviceItem>(`/devices/${id}`, { method: "PATCH", body: JSON.stringify(input) }),
   deleteDevice: (id: number) => request<void>(`/devices/${id}`, { method: "DELETE" }),
+  getPendingScan: (deviceId: number) => request<PendingScan>(`/devices/${deviceId}/pending-scan`),
+  clearPendingScan: (deviceId: number) => request<void>(`/devices/${deviceId}/pending-scan`, { method: "DELETE" }),
+  getRules: () => request<Rules>("/rules"),
+  updateRules: (input: RulesInput) => request<Rules>("/rules", { method: "PATCH", body: JSON.stringify(input) }),
+};
 
   getAttendanceCode: () => request<AttendanceCode | null>("/attendance-code"),
   generateAttendanceCode: () => request<AttendanceCode>("/attendance-code/generate", { method: "POST" }),

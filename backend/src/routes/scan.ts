@@ -1,11 +1,12 @@
+import { and, eq, sql } from "drizzle-orm";
 import { Hono } from "hono";
-import { eq, and, sql } from "drizzle-orm";
 import { db } from "../db/client";
-import { students, devices, attendance, attendanceRules } from "../db/schema";
+import { attendance, devices, students } from "../db/schema";
+import { getOrCreateRules } from "../lib/rules";
+import { setPendingScan } from "../state/pendingScans";
 
 export const scanRoute = new Hono();
 
-// POST /api/devices/:device_id/scan  { card_uid }
 scanRoute.post("/devices/:device_id/scan", async (c) => {
   const deviceId = Number(c.req.param("device_id"));
   const apiKey = c.req.header("X-Device-Key");
@@ -18,21 +19,33 @@ scanRoute.post("/devices/:device_id/scan", async (c) => {
 
   const student = await db.query.students.findFirst({ where: eq(students.cardUid, card_uid) });
   if (!student) {
+    setPendingScan(deviceId, card_uid);
     return c.json({ status: "unknown_card" }, 404);
   }
 
-  const rule = await db.query.attendanceRules.findFirst({ where: eq(attendanceRules.id, 1) });
-  const now = new Date();
-  const hhmm = now.toTimeString().slice(0, 5);
-  const status = rule && hhmm > rule.lateAfter ? "telat" : "hadir";
+  const rule = await getOrCreateRules();
+  const hhmm = new Date().toTimeString().slice(0, 5);
+
+  const type: "hadir" | "pulang" =
+    rule.manualMode === "hadir" || rule.manualMode === "pulang"
+      ? rule.manualMode
+      : hhmm >= rule.checkoutStart
+        ? "pulang"
+        : "hadir";
+
+  const status = type === "hadir" ? (hhmm > rule.lateAfter ? "telat" : "hadir") : "pulang";
 
   const existing = await db.query.attendance.findFirst({
-    where: and(eq(attendance.studentId, student.id), sql`date(scanned_at) = date('now')`),
+    where: and(
+      eq(attendance.studentId, student.id),
+      eq(attendance.type, type),
+      sql`date(scanned_at) = date('now')`
+    ),
   });
   if (existing) {
-    return c.json({ status: "ok", student_name: student.name, attendance_status: existing.status });
+    return c.json({ status: "ok", student_name: student.name, attendance_status: existing.status, type });
   }
 
-  await db.insert(attendance).values({ studentId: student.id, deviceId, status });
-  return c.json({ status: "ok", student_name: student.name, attendance_status: status });
+  await db.insert(attendance).values({ studentId: student.id, deviceId, type, status });
+  return c.json({ status: "ok", student_name: student.name, attendance_status: status, type });
 });

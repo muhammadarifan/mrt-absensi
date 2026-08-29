@@ -1,16 +1,4 @@
 <script setup lang="ts">
-import { computed, h, ref } from "vue";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
-import {
-  createSortedRowModel,
-  FlexRender,
-  rowSortingFeature,
-  tableFeatures,
-  useTable,
-  type ColumnDef,
-} from "@tanstack/vue-table";
-import { ArrowUpDown } from "@lucide/vue";
-import { api, type Student, type StudentInput } from "../lib/api";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -37,6 +25,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ArrowUpDown } from "@lucide/vue";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
+import {
+  createSortedRowModel,
+  FlexRender,
+  rowSortingFeature,
+  tableFeatures,
+  useTable,
+  type ColumnDef,
+} from "@tanstack/vue-table";
+import { computed, h, onUnmounted, ref, watch } from "vue";
+import { api, type Student, type StudentInput } from "../lib/api";
 
 const queryClient = useQueryClient();
 
@@ -60,6 +60,11 @@ const { data: classes } = useQuery({
   queryFn: api.getClasses,
 });
 
+const { data: devices } = useQuery({
+  queryKey: ["devices"],
+  queryFn: api.getDevices,
+});
+
 const classNameById = computed(() => {
   const map = new Map<number, string>();
   for (const c of classes.value ?? []) map.set(c.id, c.name);
@@ -70,6 +75,43 @@ const dialogOpen = ref(false);
 const editingId = ref<number | null>(null);
 const form = ref<{ name: string; classId: string; cardUid: string }>({ name: "", classId: "", cardUid: "" });
 const formError = ref("");
+
+const scanning = ref(false);
+const scanError = ref("");
+let pollTimer: ReturnType<typeof setInterval> | null = null;
+
+function stopScan() {
+  scanning.value = false;
+  if (pollTimer) clearInterval(pollTimer);
+  pollTimer = null;
+}
+
+async function startScan() {
+  const device = devices.value?.[0];
+  if (!device) {
+    scanError.value = "Belum ada device RFID terdaftar. Tambah dulu di halaman Devices.";
+    return;
+  }
+  scanError.value = "";
+  scanning.value = true;
+  pollTimer = setInterval(async () => {
+    try {
+      const res = await api.getPendingScan(device.id);
+      if (res.cardUid) {
+        form.value.cardUid = res.cardUid;
+        stopScan();
+        await api.clearPendingScan(device.id);
+      }
+    } catch {
+
+    }
+  }, 1000);
+}
+
+watch(dialogOpen, (open) => {
+  if (!open) stopScan();
+});
+onUnmounted(stopScan);
 
 function openCreate() {
   editingId.value = null;
@@ -165,8 +207,11 @@ const table = useTable({
 
 <template>
   <main class="page">
-    <div class="flex items-center justify-between mb-5">
-      <h1 class="!mb-0">Data Siswa</h1>
+    <div class="page-head">
+      <div>
+        <h1>Data Siswa</h1>
+        <p>{{ students?.length ?? 0 }} siswa terdaftar</p>
+      </div>
       <Button class="bg-[var(--brand)] text-white hover:opacity-90" @click="openCreate">Tambah Siswa</Button>
     </div>
 
@@ -226,7 +271,16 @@ const table = useTable({
           </div>
           <div class="flex flex-col gap-1">
             <Label for="cardUid">UID Kartu (opsional)</Label>
-            <Input id="cardUid" v-model="form.cardUid" />
+            <div class="flex gap-2">
+              <Input id="cardUid" v-model="form.cardUid" :disabled="scanning" />
+              <Button type="button" variant="outline" @click="scanning ? stopScan() : startScan()">
+                {{ scanning ? "Batal" : "Scan Kartu" }}
+              </Button>
+            </div>
+            <p v-if="scanning" class="text-[13px] text-muted-foreground -mb-1">
+              Menunggu tap kartu di reader...
+            </p>
+            <p v-if="scanError" class="text-[var(--danger)] text-[13px] -mb-1">{{ scanError }}</p>
           </div>
           <p v-if="formError" class="text-[var(--danger)] text-[13px] -mt-1.5 mb-0">{{ formError }}</p>
           <DialogFooter>

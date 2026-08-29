@@ -1,7 +1,4 @@
 <script setup lang="ts">
-import { ref } from "vue";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
-import { api, type ClassItem } from "../lib/api";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -21,6 +18,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
+import { ref } from "vue";
+import { api, type ClassItem } from "../lib/api";
 
 const queryClient = useQueryClient();
 
@@ -81,8 +81,11 @@ function onDelete(c: ClassItem) {
 
 <template>
   <main class="page">
-    <div class="flex items-center justify-between mb-5">
-      <h1 class="!mb-0">Data Kelas</h1>
+    <div class="page-head">
+      <div>
+        <h1>Data Kelas</h1>
+        <p>{{ classes?.length ?? 0 }} kelas terdaftar</p>
+      </div>
       <Button class="bg-[var(--brand)] text-white hover:opacity-90" @click="openCreate">Tambah Kelas</Button>
     </div>
 
@@ -95,13 +98,18 @@ function onDelete(c: ClassItem) {
       </TableHeader>
       <TableBody>
         <TableEmpty v-if="isLoading" :colspan="2">Loading...</TableEmpty>
-        <TableEmpty v-else-if="!classes?.length" :colspan="2">Belum ada data kelas.</TableEmpty>
+        <TableEmpty v-else-if="!classes?.length" :colspan="2">
+          <div class="flex flex-col items-center gap-1 py-3 text-[var(--muted-2)]">
+            <span class="text-[13px]">Belum ada data kelas</span>
+            <span class="text-[11.5px]">Klik "Tambah Kelas" untuk mulai</span>
+          </div>
+        </TableEmpty>
         <TableRow v-for="c in classes" v-else :key="c.id">
-          <TableCell>{{ c.name }}</TableCell>
+          <TableCell class="font-medium" style="color: var(--text-h)">{{ c.name }}</TableCell>
           <TableCell>
             <div class="flex gap-2">
               <Button variant="outline" size="sm" @click="openEdit(c)">Edit</Button>
-              <Button variant="destructive" size="sm" @click="onDelete(c)">Hapus</Button>
+              <Button variant="destructive" size="sm" class="hover:bg-[var(--danger-bg)] hover:text-[var(--danger)]" @click="onDelete(c)">Hapus</Button>
             </div>
           </TableCell>
         </TableRow>
