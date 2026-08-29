@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import { useRouter, useRoute } from "vue-router";
 import { Button } from "@/components/ui/button";
+import { computed } from "vue";
+import { useRoute, useRouter } from "vue-router";
 
 const router = useRouter();
 const route = useRoute();
@@ -16,15 +16,18 @@ function logout() {
 
 <template>
   <nav v-if="loggedIn">
+    <span class="brand-mark"><span class="dot" />MRT Absensi</span>
     <router-link to="/">Absensi</router-link>
-    |
     <router-link to="/students">Siswa</router-link>
-    |
     <router-link to="/classes">Kelas</router-link>
-    |
     <router-link to="/devices">Perangkat</router-link>
-    |
-    <Button class="bg-[var(--brand)] text-white hover:opacity-90" @click="logout">Logout</Button>
+    <Button size="sm" variant="ghost" class="text-[13px] hover:bg-[var(--danger-bg)] hover:text-[var(--danger)]" @click="logout">
+      Logout
+    </Button>
   </nav>
-  <router-view />
+  <router-view v-slot="{ Component }">
+    <transition name="page-fade" mode="out-in">
+      <component :is="Component" />
+    </transition>
+  </router-view>
 </template>

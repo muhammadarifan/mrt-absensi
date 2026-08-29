@@ -23,6 +23,19 @@ export type DeviceItem = { id: number; name: string; apiKey: string; createdAt: 
 
 export type DeviceInput = { name: string };
 
+export type PendingScan = { cardUid: string | null; scannedAt?: string };
+
+export type Rules = {
+  id: number;
+  checkinStart: string;
+  lateAfter: string;
+  checkoutStart: string;
+  checkoutEnd: string;
+  manualMode: "auto" | "hadir" | "pulang";
+};
+
+export type RulesInput = Partial<Omit<Rules, "id">>;
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const token = getToken();
   const res = await fetch(`${BASE_URL}${path}`, {
@@ -67,4 +80,8 @@ export const api = {
   updateDevice: (id: number, input: DeviceInput) =>
     request<DeviceItem>(`/devices/${id}`, { method: "PATCH", body: JSON.stringify(input) }),
   deleteDevice: (id: number) => request<void>(`/devices/${id}`, { method: "DELETE" }),
+  getPendingScan: (deviceId: number) => request<PendingScan>(`/devices/${deviceId}/pending-scan`),
+  clearPendingScan: (deviceId: number) => request<void>(`/devices/${deviceId}/pending-scan`, { method: "DELETE" }),
+  getRules: () => request<Rules>("/rules"),
+  updateRules: (input: RulesInput) => request<Rules>("/rules", { method: "PATCH", body: JSON.stringify(input) }),
 };
