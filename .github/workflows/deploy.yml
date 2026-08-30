@@ -30,23 +30,23 @@ jobs:
           RSYNC_SSH="ssh -i ~/.ssh/deploy_key"
           rsync -az --delete -e "$RSYNC_SSH" \
             --exclude node_modules --exclude 'attendance.db*' \
-            backend/ "root@${{ secrets.SERVER_HOST }}:/opt/mrt-absensi/backend/"
+            backend/ "root@${{ secrets.SERVER_HOST }}:/var/www/mrt-absensi/backend/"
           rsync -az --delete -e "$RSYNC_SSH" \
-            frontend/dist/ "root@${{ secrets.SERVER_HOST }}:/opt/mrt-absensi/frontend/dist/"
+            frontend/dist/ "root@${{ secrets.SERVER_HOST }}:/var/www/mrt-absensi/frontend/dist/"
           rsync -az -e "$RSYNC_SSH" \
-            db/ "root@${{ secrets.SERVER_HOST }}:/opt/mrt-absensi/db/"
+            db/ "root@${{ secrets.SERVER_HOST }}:/var/www/mrt-absensi/db/"
 
       - name: Install deps, migrate DB, restart services
         run: |
           ssh -i ~/.ssh/deploy_key "root@${{ secrets.SERVER_HOST }}" '
             export PATH=$HOME/.bun/bin:$PATH
-            cd /opt/mrt-absensi/backend
+            cd /var/www/mrt-absensi/backend
             WEB_ORIGIN="${{ secrets.WEB_ORIGIN }}"
             if [ -n "$WEB_ORIGIN" ]; then
               echo "WEB_ORIGIN=$WEB_ORIGIN" > .env
             fi
             bun install
-            DB_FILE=/opt/mrt-absensi/backend/attendance.db bun run db:push --force
+            DB_FILE=/var/www/mrt-absensi/backend/attendance.db bun run db:push --force
             pm2 restart mrt-backend
             pm2 restart mrt-frontend
           '
