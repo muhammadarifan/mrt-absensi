@@ -3,6 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Table,
   TableBody,
   TableCell,
@@ -23,14 +30,52 @@ const { data: attendance, isLoading, error } = useQuery({
   queryFn: () => api.getAttendance(today),
 });
 
+const { data: classes } = useQuery({
+  queryKey: ["classes"],
+  queryFn: api.getClasses,
+});
+
 const { data: rules } = useQuery({
   queryKey: ["rules"],
   queryFn: api.getRules,
 });
 
-const hadirCount = computed(() => attendance.value?.filter((r: any) => r.attendance.type === "hadir" && r.attendance.status === "hadir").length ?? 0);
-const telatCount = computed(() => attendance.value?.filter((r: any) => r.attendance.status === "telat").length ?? 0);
-const pulangCount = computed(() => attendance.value?.filter((r: any) => r.attendance.type === "pulang").length ?? 0);
+const classNameById = computed(() => {
+  const map = new Map<number, string>();
+  for (const c of classes.value ?? []) map.set(c.id, c.name);
+  return map;
+});
+
+const hadirCount = computed(() => attendance.value?.filter((r) => r.hadir).length ?? 0);
+const telatCount = computed(() => attendance.value?.filter((r) => r.hadir?.status === "telat").length ?? 0);
+const pulangCount = computed(() => attendance.value?.filter((r) => r.pulang).length ?? 0);
+
+const search = ref("");
+const statusFilter = ref<"semua" | "sudah_hadir" | "sudah_pulang" | "belum_absen">("semua");
+const sortBy = ref<"nama" | "jam">("nama");
+
+const visibleRows = computed(() => {
+  let rows = attendance.value ?? [];
+
+  if (search.value.trim()) {
+    const q = search.value.trim().toLowerCase();
+    rows = rows.filter((r) => r.student.name.toLowerCase().includes(q));
+  }
+
+  if (statusFilter.value === "sudah_hadir") rows = rows.filter((r) => r.hadir);
+  else if (statusFilter.value === "sudah_pulang") rows = rows.filter((r) => r.pulang);
+  else if (statusFilter.value === "belum_absen") rows = rows.filter((r) => !r.hadir && !r.pulang);
+
+  rows = [...rows].sort((a, b) => {
+    if (sortBy.value === "nama") return a.student.name.localeCompare(b.student.name);
+    const ta = a.hadir?.scannedAt ?? a.pulang?.scannedAt ?? "";
+    const tb = b.hadir?.scannedAt ?? b.pulang?.scannedAt ?? "";
+    return tb.localeCompare(ta);
+  });
+
+  return rows;
+});
+
 
 const modeMutation = useMutation({
   mutationFn: (manualMode: Rules["manualMode"]) => api.updateRules({ manualMode }),
@@ -68,14 +113,8 @@ const deleteMutation = useMutation({
   onSuccess: () => queryClient.invalidateQueries({ queryKey: ["attendance", today] }),
 });
 
-function onDelete(row: any) {
-  if (confirm(`Hapus absensi "${row.students.name}"?`)) deleteMutation.mutate(row.attendance.id);
-}
-
-function pillClass(row: any) {
-  if (row.attendance.status === "telat") return "pill-late";
-  if (row.attendance.type === "pulang") return "pill-pulang";
-  return "pill-success";
+function onDelete(id: number, nama: string, tipe: string) {
+  if (confirm(`Hapus absen ${tipe} "${nama}"?`)) deleteMutation.mutate(id);
 }
 </script>
 
@@ -90,27 +129,9 @@ function pillClass(row: any) {
 
     <div class="mode-bar">
       <span class="text-[13px] font-medium" style="color: var(--text-h)">Mode Absen:</span>
-      <button
-        class="mode-btn"
-        :class="{ active: rules?.manualMode === 'auto' }"
-        @click="modeMutation.mutate('auto')"
-      >
-        Otomatis
-      </button>
-      <button
-        class="mode-btn"
-        :class="{ active: rules?.manualMode === 'hadir' }"
-        @click="modeMutation.mutate('hadir')"
-      >
-        Paksa Hadir
-      </button>
-      <button
-        class="mode-btn"
-        :class="{ active: rules?.manualMode === 'pulang' }"
-        @click="modeMutation.mutate('pulang')"
-      >
-        Paksa Pulang
-      </button>
+      <button class="mode-btn" :class="{ active: rules?.manualMode === 'auto' }" @click="modeMutation.mutate('auto')">Otomatis</button>
+      <button class="mode-btn" :class="{ active: rules?.manualMode === 'hadir' }" @click="modeMutation.mutate('hadir')">Paksa Hadir</button>
+      <button class="mode-btn" :class="{ active: rules?.manualMode === 'pulang' }" @click="modeMutation.mutate('pulang')">Paksa Pulang</button>
       <span v-if="rules?.manualMode !== 'auto'" class="text-[12px]" style="color: var(--danger)">
         ⚠ Override aktif — semua tap dicatat sebagai {{ rules?.manualMode }}
       </span>
@@ -133,22 +154,17 @@ function pillClass(row: any) {
         <Input v-model="scheduleForm.checkoutStart" type="time" class="w-28" />
       </div>
       <div class="flex flex-col gap-1">
-        <Label class="text-[12px]">Batas Pulang</Label>
+        <Label class="text-[12px]">Batas Pulang (di luar ini = wajib manual)</Label>
         <Input v-model="scheduleForm.checkoutEnd" type="time" class="w-28" />
       </div>
-      <Button
-        size="sm"
-        class="bg-[var(--brand)] text-white hover:opacity-90"
-        :disabled="scheduleMutation.isPending.value"
-        @click="scheduleMutation.mutate()"
-      >
+      <Button size="sm" class="bg-[var(--brand)] text-white hover:opacity-90" :disabled="scheduleMutation.isPending.value" @click="scheduleMutation.mutate()">
         {{ scheduleMutation.isPending.value ? "Menyimpan..." : "Simpan Jadwal" }}
       </Button>
     </div>
 
-    <div class="grid grid-cols-3 gap-3 mb-6">
+    <div class="grid grid-cols-3 gap-3 mb-5">
       <div class="stat-card">
-        <div class="label">Hadir</div>
+        <div class="label">Sudah Hadir</div>
         <div class="value" style="color: var(--success-text)">{{ hadirCount }}</div>
       </div>
       <div class="stat-card">
@@ -156,45 +172,77 @@ function pillClass(row: any) {
         <div class="value" style="color: var(--late-text)">{{ telatCount }}</div>
       </div>
       <div class="stat-card">
-        <div class="label">Pulang</div>
+        <div class="label">Sudah Pulang</div>
         <div class="value" style="color: var(--brand)">{{ pulangCount }}</div>
       </div>
+    </div>
+
+    <div class="toolbar">
+      <Input v-model="search" placeholder="Cari nama siswa..." class="max-w-[240px]" />
+      <Select v-model="statusFilter">
+        <SelectTrigger class="w-[170px]">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="semua">Semua</SelectItem>
+          <SelectItem value="sudah_hadir">Sudah Hadir</SelectItem>
+          <SelectItem value="sudah_pulang">Sudah Pulang</SelectItem>
+          <SelectItem value="belum_absen">Belum Absen</SelectItem>
+        </SelectContent>
+      </Select>
+      <Select v-model="sortBy">
+        <SelectTrigger class="w-[150px]">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="nama">Urut: Nama A-Z</SelectItem>
+          <SelectItem value="jam">Urut: Terbaru</SelectItem>
+        </SelectContent>
+      </Select>
+      <span class="text-[12.5px] ml-auto" style="color: var(--muted-2)">{{ visibleRows.length }} siswa</span>
     </div>
 
     <Table>
       <TableHeader>
         <TableRow>
           <TableHead>Nama</TableHead>
-          <TableHead>Jam Scan</TableHead>
-          <TableHead>Tipe</TableHead>
-          <TableHead>Status</TableHead>
+          <TableHead>Kelas</TableHead>
+          <TableHead>Hadir</TableHead>
+          <TableHead>Pulang</TableHead>
           <TableHead>Aksi</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         <TableEmpty v-if="isLoading" :colspan="5">Memuat data...</TableEmpty>
         <TableEmpty v-else-if="error" :colspan="5">Gagal memuat data.</TableEmpty>
-        <TableEmpty v-else-if="!attendance?.length" :colspan="5">
-          <div class="flex flex-col items-center gap-1 py-3 text-[var(--muted-2)]">
-            <span class="text-[13px]">Belum ada yang absen hari ini</span>
-            <span class="text-[11.5px]">Data otomatis muncul begitu ada kartu di-tap</span>
-          </div>
-        </TableEmpty>
-        <TableRow v-for="row in attendance" v-else :key="row.attendance.id">
-          <TableCell class="font-medium" style="color: var(--text-h)">{{ row.students.name }}</TableCell>
-          <TableCell class="tabular-nums text-[var(--muted-2)]">{{ row.attendance.scannedAt }}</TableCell>
+        <TableEmpty v-else-if="!visibleRows.length" :colspan="5">Gak ada siswa yang cocok.</TableEmpty>
+        <TableRow v-for="row in visibleRows" v-else :key="row.student.id">
+          <TableCell class="font-medium" style="color: var(--text-h)">{{ row.student.name }}</TableCell>
+          <TableCell class="text-[var(--muted-2)]">{{ classNameById.get(row.student.classId) ?? "-" }}</TableCell>
           <TableCell>
-            <span class="pill" :class="row.attendance.type === 'pulang' ? 'pill-pulang' : 'pill-success'">
-              {{ row.attendance.type === "pulang" ? "Pulang" : "Hadir" }}
-            </span>
+            <div v-if="row.hadir" class="flex items-center gap-1.5">
+              <span class="pill" :class="row.hadir.status === 'telat' ? 'pill-late' : 'pill-success'">
+                {{ row.hadir.status === "telat" ? "Telat" : "Hadir" }}
+              </span>
+              <span class="text-[11.5px] tabular-nums" style="color: var(--muted-2)">
+                {{ row.hadir.scannedAt.slice(11, 16) }}
+              </span>
+              <button class="cell-x" title="Hapus" @click="onDelete(row.hadir.id, row.student.name, 'Hadir')">×</button>
+            </div>
+            <span v-else class="cell-empty">belum absen</span>
           </TableCell>
           <TableCell>
-            <span class="pill" :class="pillClass(row)">{{ row.attendance.status }}</span>
+            <div v-if="row.pulang" class="flex items-center gap-1.5">
+              <span class="pill pill-pulang">Pulang</span>
+              <span class="text-[11.5px] tabular-nums" style="color: var(--muted-2)">
+                {{ row.pulang.scannedAt.slice(11, 16) }}
+              </span>
+              <button class="cell-x" title="Hapus" @click="onDelete(row.pulang.id, row.student.name, 'Pulang')">×</button>
+            </div>
+            <span v-else class="cell-empty">belum absen</span>
           </TableCell>
           <TableCell>
-            <Button variant="outline" size="sm" class="hover:bg-[var(--danger-bg)] hover:text-[var(--danger)] hover:border-[var(--danger)]" @click="onDelete(row)">
-              Hapus
-            </Button>
+            <router-link to="/absen-manual" class="text-[12.5px]" style="color: var(--brand)">+ Manual</router-link>
           </TableCell>
         </TableRow>
       </TableBody>

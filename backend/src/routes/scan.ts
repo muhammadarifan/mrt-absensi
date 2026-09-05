@@ -26,12 +26,29 @@ scanRoute.post("/devices/:device_id/scan", async (c) => {
   const rule = await getOrCreateRules();
   const hhmm = new Date().toTimeString().slice(0, 5);
 
+  if (rule.manualMode === "auto" && (hhmm < rule.checkinStart || hhmm > rule.checkoutEnd)) {
+    return c.json({ status: "diluar_jam", student_name: student.name }, 403);
+  }
+
   const type: "hadir" | "pulang" =
     rule.manualMode === "hadir" || rule.manualMode === "pulang"
       ? rule.manualMode
       : hhmm >= rule.checkoutStart
         ? "pulang"
         : "hadir";
+
+  if (type === "pulang") {
+    const sudahHadir = await db.query.attendance.findFirst({
+      where: and(
+        eq(attendance.studentId, student.id),
+        eq(attendance.type, "hadir"),
+        sql`date(scanned_at) = date('now')`
+      ),
+    });
+    if (!sudahHadir) {
+      return c.json({ status: "belum_hadir", student_name: student.name }, 403);
+    }
+  }
 
   const status = type === "hadir" ? (hhmm > rule.lateAfter ? "telat" : "hadir") : "pulang";
 
