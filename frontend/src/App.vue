@@ -5,7 +5,7 @@ import { useRoute, useRouter } from "vue-router";
 
 const router = useRouter();
 const route = useRoute();
-const loggedIn = computed(() => route.path !== "/login" && route.path !== "/portal");
+const loggedIn = computed(() => route.path !== "/login");
 
 function logout() {
   localStorage.removeItem("token");
@@ -18,6 +18,7 @@ function logout() {
   <nav v-if="loggedIn">
     <span class="brand-mark"><span class="dot" />MRT Absensi</span>
     <router-link to="/">Absensi</router-link>
+    <router-link to="/absen-manual">Absen Manual</router-link>
     <router-link to="/students">Siswa</router-link>
     <router-link to="/classes">Kelas</router-link>
     <router-link to="/devices">Perangkat</router-link>
