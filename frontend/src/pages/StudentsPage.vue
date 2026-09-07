@@ -36,11 +36,11 @@ import {
   type ColumnDef,
 } from "@tanstack/vue-table";
 import { computed, h, onUnmounted, ref, watch } from "vue";
-import { api, type Student, type StudentInput } from "../lib/api";
+import { api, type AttendanceCode, type Student, type StudentInput } from "../lib/api";
 
 const queryClient = useQueryClient();
 
-const { data: attendanceCode } = useQuery({
+const { data: attendanceCode } = useQuery<AttendanceCode | null>({
   queryKey: ["attendance-code"],
   queryFn: api.getAttendanceCode,
 });
