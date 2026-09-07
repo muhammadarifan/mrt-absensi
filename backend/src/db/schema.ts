@@ -37,7 +37,7 @@ export const attendance = sqliteTable(
   {
     id: integer("id").primaryKey({ autoIncrement: true }),
     studentId: integer("student_id").notNull().references(() => students.id),
-    deviceId: integer("device_id").notNull().references(() => devices.id),
+    deviceId: integer("device_id").references(() => devices.id),
     type: text("type", { enum: ["hadir", "pulang"] }).notNull().default("hadir"),
     scannedAt: text("scanned_at").notNull().default(sql`(datetime('now'))`),
     status: text("status", { enum: ["hadir", "telat", "pulang"] }).notNull(),
@@ -52,7 +52,6 @@ export const attendance = sqliteTable(
   ]
 );
 
-// Kode absensi mingguan: baris terbaru = kode aktif, ditulis guru di papan.
 export const attendanceCodes = sqliteTable("attendance_codes", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   code: text("code").notNull(),
